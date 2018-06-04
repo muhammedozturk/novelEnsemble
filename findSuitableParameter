@@ -1,0 +1,229 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using SharpLearning.AdaBoost.Learners;
+using SharpLearning.Common.Interfaces;
+using SharpLearning.CrossValidation.CrossValidators;
+using SharpLearning.CrossValidation.TrainingTestSplitters;
+using SharpLearning.DecisionTrees.Learners;
+using SharpLearning.Ensemble.Learners;
+using SharpLearning.GradientBoost.Learners;
+using SharpLearning.InputOutput.Csv;
+using SharpLearning.Metrics.Regression;
+using SharpLearning.Optimization;
+using SharpLearning.RandomForest.Learners;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+namespace SharpEnsemble
+{
+    public class Tuning
+    {
+        public string dataPath = Resources.Resource1.xalan_2_4;
+        public Tuning()
+        {
+            //
+            // TODO: Add constructor logic here
+            //
+        }
+        public double[] TuneHyperAdaBoost()
+        {
+            #region Read data
+
+            // Use StreamReader(filepath) when running from filesystem
+            var parser = new CsvParser(() => new StringReader(dataPath));
+            var targetName = "bug";
+
+            // read feature matrix
+            var observations = parser.EnumerateRows(c => c != targetName)
+                .ToF64Matrix();
+
+            // read classification targets
+            var targets = parser.EnumerateRows(targetName)
+                .ToF64Vector();
+
+            #endregion
+
+            // metric to minimize
+            var metric = new MeanSquaredErrorRegressionMetric();
+
+            // Parameter ranges for the optimizer 
+            var paramers = new ParameterBounds[]
+            {
+                new ParameterBounds(min: 1, max: 100, transform: Transform.Linear), // iterations
+                new ParameterBounds(min: 0, max: 0.9, transform: Transform.Linear), // learningrate
+                 new ParameterBounds(min: 1, max: 15, transform: Transform.Linear), // maxtreeDepth
+                  new ParameterBounds(min: 1, max: 4, transform: Transform.Linear), // minSplitSize
+            };
+
+            // create random search optimizer
+            var optimizer = new RandomSearchOptimizer(paramers, iterations: 30, runParallel: true);
+
+            // other availible optimizers
+            // GridSearchOptimizer
+            // GlobalizedBoundedNelderMeadOptimizer
+            // ParticleSwarmOptimizer
+            // BayesianOptimizer
+
+            // function to minimize
+            Func<double[], OptimizerResult> minimize = p =>
+            {
+                var cv = new RandomCrossValidation<double>(crossValidationFolds: 5, seed: 42);
+                var optlearner = new RegressionAdaBoostLearner(iterations: (int)p[0], learningRate: p[1], maximumTreeDepth: (int)p[2], minimumSplitSize: (int)p[3]);
+                var predictions = cv.CrossValidate(optlearner, observations, targets);
+                var error = metric.Error(targets, predictions);
+
+                return new OptimizerResult(p, error);
+            };
+
+            // run optimizer
+            var result = optimizer.OptimizeBest(minimize);
+            var bestParameters = result.ParameterSet;
+            double[] bestList = new double[5];
+            bestList[0] = bestParameters[0]; bestList[1] = bestParameters[1]; bestList[2] = bestParameters[2]; bestList[3] = bestParameters[3];
+            return bestList;
+        }
+        //TUNEHYPER
+        public double[] TuneHyperRandomForest()
+        {
+            #region Read data
+
+            // Use StreamReader(filepath) when running from filesystem
+            var parser = new CsvParser(() => new StringReader(dataPath));
+            var targetName = "bug";
+
+            // read feature matrix
+            var observations = parser.EnumerateRows(c => c != targetName)
+                .ToF64Matrix();
+
+            // read classification targets
+            var targets = parser.EnumerateRows(targetName)
+                .ToF64Vector();
+
+            #endregion
+
+            // metric to minimize
+            var metric = new MeanSquaredErrorRegressionMetric();
+
+            // Parameter ranges for the optimizer 
+            var paramers = new ParameterBounds[]
+            {
+                new ParameterBounds(min: 1, max: 1000, transform: Transform.Linear), // iterations
+                new ParameterBounds(min: 1, max: 4, transform: Transform.Linear), // splitsize
+                 new ParameterBounds(min: 1, max: 15, transform: Transform.Linear), // maxtreeDepth
+            };
+
+            // create random search optimizer
+            var optimizer = new RandomSearchOptimizer(paramers, iterations: 30, runParallel: true);
+
+            // other availible optimizers
+            // GridSearchOptimizer
+            // GlobalizedBoundedNelderMeadOptimizer
+            // ParticleSwarmOptimizer
+            // BayesianOptimizer
+
+            // function to minimize
+            Func<double[], OptimizerResult> minimize = p =>
+            {
+                var cv = new RandomCrossValidation<double>(crossValidationFolds: 5, seed: 42);
+                var optlearner = new RegressionRandomForestLearner(trees: (int)p[0], minimumSplitSize: (int)p[1], maximumTreeDepth: (int)p[2]);
+                var predictions = cv.CrossValidate(optlearner, observations, targets);
+                var error = metric.Error(targets, predictions);
+
+                return new OptimizerResult(p, error);
+            };
+
+            // run optimizer
+            var result = optimizer.OptimizeBest(minimize);
+            var bestParameters = result.ParameterSet;
+
+            double[] bestList = new double[5];
+            bestList[0] = bestParameters[0]; bestList[1] = bestParameters[1]; bestList[2] = bestParameters[2];
+            return bestList;
+
+
+            //var learner = new RegressionDecisionTreeLearner(maximumTreeDepth: (int)bestParameters[0], minimumSplitSize: (int)bestParameters[1]);
+
+            //// learn model with found parameters
+            //var model = learner.Learn(observations, targets);
+
+
+        }
+        public double[] TuneHyperGradient()
+        {
+            #region Read data
+
+            // Use StreamReader(filepath) when running from filesystem
+            var parser = new CsvParser(() => new StringReader(dataPath));
+            var targetName = "bug";
+
+            // read feature matrix
+            var observations = parser.EnumerateRows(c => c != targetName)
+                .ToF64Matrix();
+
+            // read classification targets
+            var targets = parser.EnumerateRows(targetName)
+                .ToF64Vector();
+
+            #endregion
+
+            // metric to minimize
+            var metric = new MeanSquaredErrorRegressionMetric();
+
+            // Parameter ranges for the optimizer 
+            var paramers = new ParameterBounds[]
+            {
+                new ParameterBounds(min: 1, max: 1000, transform: Transform.Linear), // iterations
+                new ParameterBounds(min: 0, max: 1, transform: Transform.Linear), // learningrate
+                 new ParameterBounds(min: 1, max: 15, transform: Transform.Linear), // maxtreeDepth
+                                  new ParameterBounds(min: 1, max: 10, transform: Transform.Linear), // featureprSplit
+
+            };
+
+            // create random search optimizer
+            var optimizer = new RandomSearchOptimizer(paramers, iterations: 30, runParallel: true);
+
+            // other availible optimizers
+            // GridSearchOptimizer
+            // GlobalizedBoundedNelderMeadOptimizer
+            // ParticleSwarmOptimizer
+            // BayesianOptimizer
+
+            // function to minimize
+            Func<double[], OptimizerResult> minimize = p =>
+            {
+                var cv = new RandomCrossValidation<double>(crossValidationFolds: 5, seed: 42);
+                //   new RegressionSquareLossGradientBoostLearner(iterations:  80, learningRate: 0.028,  maximumTreeDepth: 12,
+                //subSampleRatio: 0.559, featuresPrSplit: 10, runParallel: false)
+                var optlearner = new RegressionSquareLossGradientBoostLearner(iterations: (int)p[0], learningRate: p[1], maximumTreeDepth: (int)p[2], featuresPrSplit: (int)p[3]);
+                var predictions = cv.CrossValidate(optlearner, observations, targets);
+                var error = metric.Error(targets, predictions);
+
+                return new OptimizerResult(p, error);
+            };
+
+            // run optimizer
+            var result = optimizer.OptimizeBest(minimize);
+            var bestParameters = result.ParameterSet;
+
+            double[] bestList = new double[5];
+            bestList[0] = bestParameters[0]; bestList[1] = bestParameters[1]; bestList[2] = bestParameters[2]; bestList[3] = bestParameters[3];
+            return bestList;
+
+
+            //var learner = new RegressionDecisionTreeLearner(maximumTreeDepth: (int)bestParameters[0], minimumSplitSize: (int)bestParameters[1]);
+
+            //// learn model with found parameters
+            //var model = learner.Learn(observations, targets);
+
+
+        }
+    }
+}
