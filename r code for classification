@@ -1,0 +1,70 @@
+%%%%%%%%%%%%%%%%%%%%%%%%LOAD Library for random forest
+library(randomForest)
+temp = read.csv("arc.csv")
+%%%%%%%%%%%%%%CALCULATE NUMBER OF LINESS%%%%%%%%%%%%%%%%%%%%%
+testcon <- file("deneme1.csv",open="r")
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+temp1 <- as.matrix(temp) 
+satir=nrow(temp1)
+x3 <- sample(1:satir, 50)
+mm <- matrix(0, 50, 21)
+degerAl <- function(x3,degerler)
+{
+for(j in 1:50){	
+for(i in 1:21)
+{
+	
+	
+	mm[j,i] <- degerler[x3[j],i]
+}
+}
+
+return(mm)
+}
+%%%%%%%%%%%%%%%%%%%%%%%%Write training part
+mydata=degerAl(x3,temp1)
+colnames(mydata) <- c("wmc","dit","noc","cbo","rfc","lcom","ca","ce","npm","lcom3","loc","dam","moa","mfa","cam","ic","cbm","amc","max_cc","avg_cc","bug")
+write.csv(mydata, file = "deneme1.csv")
+%%%%%%%%%%%%%%%%%%%%%%%% write testing part
+mm <- matrix(0, satir-50, 21) 
+mydata2=read.csv("deneme1.csv")
+alinan=testVeri(x3,temp1)
+colnames(alinan) <- c("wmc","dit","noc","cbo","rfc","lcom","ca","ce","npm","lcom3","loc","dam","moa","mfa","cam","ic","cbm","amc","max_cc","avg_cc","bug")
+write.csv(alinan, file = "deneme2.csv")
+#####################Write error values
+mydata=read.csv("deneme1.csv")
+mydata2=read.csv("deneme2.csv")
+fit <- randomForest(bug~., data=mydata,ntree=12,maxnodes=100)
+predictions <- predict(fit, mydata2,type="prob")
+predictionRandomF=predictions
+errorRandomF=fit$err.rate
+write.csv(fit$err.rate,"err1.csv")
+%%%%%%%%%%RUN C5.0%%%%%%%%%%%%%%
+library(C50)
+temp=read.csv("deneme1.csv")
+treeModel <- C5.0(x = temp, y = temp$bug,ntree=12,maxnodes=100)
+mydata2=read.csv("deneme2.csv")
+predictions2=predict(treeModel, mydata2,type="prob")
+predictionC5=predictions2
+%%%%%%%%%Test the resulting output%%%%%%%%%%%%%%%%%%%%%%%%
+library(neuralnet)
+mydata1=read.csv("deneme1.csv")
+mydata2=read.csv("deneme2.csv")
+nn <- neuralnet(bug ~ wmc+dit+noc+cbo+rfc+lcom+ca+ce+npm+lcom3+loc+dam+moa+mfa+cam+ic+cbm+amc+max_cc+avg_cc, data=mydata1, hidden=c(2,1), linear.output=FALSE, threshold=0.01,err.fct = "sse")
+temp_test <- subset(mydata2, select = c("wmc","dit","noc","cbo","rfc","lcom","ca","ce","npm","lcom3","loc","dam","moa","mfa","cam","ic","cbm","amc","max_cc","avg_cc"))
+
+nn$result.matrix
+nn.results <- compute(nn, temp_test)
+
+#Accuracy
+results <- data.frame(actual = mydata2$bug, prediction = nn.results$net.result)
+results
+roundedresults<-sapply(results,round,digits=0)
+roundedresultsdf=data.frame(roundedresults)
+attach(roundedresultsdf)
+errorNN=nn$err.fct(prediction,actual)
+table(actual,prediction)
+predictionNN=prediction
+%%%%Write results of the prediction#######################################
+sonuc=data.frame(predictionRandomF,predictionC5,predictionNN,actual)
+write.csv(sonuc,"sonuclar.csv")
