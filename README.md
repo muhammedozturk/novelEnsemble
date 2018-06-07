@@ -6,6 +6,7 @@ Instead, novelENsemble employs some metrics indicating defectiveness of a softwa
 
 The algorithm was established on R and C# codes.
 ![alt text](https://github.com/muhammedozturk/novelEnsemble/blob/master/main.png)
+![alt text](https://github.com/muhammedozturk/novelEnsemble/blob/master/constructor.png)
 =========================TUNING.CS===================================================
 1. Include three functions (TuneHyperAdaBoost(),TuneHyperRandomForest(),TuneHyperGradient())
 2. They are used for RegressionAdaBoostLearner,RegressionRandomForestLearner,RegressionSquareLossGradientBoostLearner
