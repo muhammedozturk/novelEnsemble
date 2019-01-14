@@ -35,7 +35,15 @@ namespace SharpEnsemble
      result=result*(weight*weight);
         return result;
     }
-        
+           public static int calculateWeight(int weight,int n){
+            public int weighted;
+            while(n>0)
+            {
+                weighted+=hyper.getValue();
+                n--;
+            }
+            return weighted;
+    }
 
     }
 }
