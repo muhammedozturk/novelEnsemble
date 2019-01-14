@@ -1,0 +1,43 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using SharpLearning.AdaBoost.Learners;
+using SharpLearning.Common.Interfaces;
+using SharpLearning.CrossValidation.CrossValidators;
+using SharpLearning.CrossValidation.TrainingTestSplitters;
+using SharpLearning.DecisionTrees.Learners;
+using SharpLearning.Ensemble.Learners;
+using SharpLearning.GradientBoost.Learners;
+using SharpLearning.InputOutput.Csv;
+using SharpLearning.Metrics.Regression;
+using SharpLearning.Optimization;
+using SharpLearning.RandomForest.Learners;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using RDotNet;
+namespace SharpEnsemble
+{
+    public class calculateRange
+    {
+    public static int matrixSign(int row, int column){
+        public int iterations=100;public int result=0;
+        for(int i=0; i<row*column*iterations;k++)
+        {
+          result+=row*column;
+        }
+        return result;
+    }
+        
+
+    }
+}
